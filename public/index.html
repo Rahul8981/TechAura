@@ -10,36 +10,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Navbar -->
-    <nav class="fixed w-full top-0 z-50 bg-[#f3f7fb]/80 backdrop-blur-md border-b border-white/50 px-6 py-4 flex justify-between items-center shadow-sm">
+    <nav class="fixed w-full top-0 z-50 bg-[#f3f7fb]/90 backdrop-blur-md border-b border-white/50 px-6 py-4 flex justify-between items-center shadow-sm">
         <div class="flex items-center gap-3 cursor-pointer" onclick="navigate('home')">
             <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
                 <i class="fa-solid fa-graduation-cap"></i>
             </div>
             <span class="text-2xl font-extrabold text-indigo-900 font-['Outfit']">TECHAURA</span>
         </div>
-        <div class="hidden md:flex gap-6 font-semibold text-slate-600">
-            <a href="#" class="hover:text-indigo-600 transition" onclick="navigate('home')">Home</a>
-            <a href="#how-it-works" class="hover:text-indigo-600 transition">How It Works</a>
-            <a href="#" class="hover:text-indigo-600 transition">Opportunities</a>
-        </div>
-        <div class="flex gap-4" id="nav-auth-buttons">
-            <button class="font-bold text-indigo-600 px-4 py-2" onclick="navigate('login')">Login</button>
-            <button class="clay-btn" onclick="navigate('login')">Get Started</button>
-        </div>
+        <div class="flex gap-4" id="nav-auth-buttons"></div>
     </nav>
 
-    <!-- Main Content Injection -->
-    <main id="app-root" class="mt-20 min-h-screen"></main>
+    <main id="app-root" class="mt-20 min-h-[85vh] pb-20"></main>
 
-    <!-- Toast Notifications -->
     <div id="toast" class="fixed bottom-5 right-5 bg-white text-slate-800 px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-semibold border border-slate-100 flex items-center gap-3">
         <i class="fa-solid fa-circle-check text-green-500 text-xl"></i>
         <span id="toast-msg"></span>
     </div>
 
-    <!-- Frontend Application Logic -->
     <script src="app.js"></script>
 </body>
 </html>
