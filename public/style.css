@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap');
+
+:root {
+    --bg-color: #f3f7fb;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --secondary: #06b6d4;
+    --accent: #f59e0b;
+    --success: #10b981;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    
+    /* Claymorphism Shadows */
+    --clay-shadow-out: 12px 12px 24px #d1d9e6, -12px -12px 24px #ffffff;
+    --clay-shadow-in: inset 6px 6px 12px rgba(163,177,198,0.4), inset -6px -6px 12px rgba(255,255,255,0.9);
+    --clay-btn-shadow: inset 4px 4px 8px rgba(255,255,255,0.3), inset -4px -4px 8px rgba(0,0,0,0.15), 6px 6px 12px rgba(0,0,0,0.1);
+}
+
+* {
+    margin: 0; padding: 0; box-sizing: border-box;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Claymorphism Utilities */
+.clay-card {
+    background: var(--bg-color);
+    border-radius: 24px;
+    box-shadow: var(--clay-shadow-out);
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 24px;
+    transition: transform 0.3s ease;
+}
+
+.clay-card:hover {
+    transform: translateY(-5px);
+}
+
+.clay-card-inner {
+    background: var(--bg-color);
+    border-radius: 16px;
+    box-shadow: var(--clay-shadow-in);
+    padding: 16px;
+}
+
+.clay-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--clay-btn-shadow);
+    transition: all 0.3s ease;
+}
+
+.clay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 4px 4px 8px rgba(255,255,255,0.4), inset -4px -4px 8px rgba(0,0,0,0.1), 8px 8px 16px rgba(0,0,0,0.2);
+    background: var(--primary-hover);
+}
+
+.clay-btn-secondary {
+    background: var(--secondary);
+}
+
+.clay-input {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: none;
+    background: var(--bg-color);
+    box-shadow: var(--clay-shadow-in);
+    color: var(--text-main);
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 16px;
+}
+
+.clay-input:focus {
+    box-shadow: inset 8px 8px 16px rgba(163,177,198,0.5), inset -8px -8px 16px rgba(255,255,255,1), 0 0 0 2px var(--primary);
+}
+
+/* Animations */
+.fade-in { animation: fadeIn 0.8s ease-in-out; }
+.slide-up { animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Match Circle Ring */
+.match-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--success) calc(var(--percentage) * 1%), var(--bg-color) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--clay-shadow-out);
+}
+.match-ring::before {
+    content: "";
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    background: var(--bg-color);
+    border-radius: 50%;
+    box-shadow: var(--clay-shadow-in);
+}
+.match-ring span {
+    position: relative;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-main);
+    font-family: 'Outfit';
+}
