@@ -1,33 +1,26 @@
-// admin.js
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-// Simulated Admin Analytics specific to SIH26044
 router.get('/stats', async (req, res) => {
-    // In a real scenario, this aggregates from MongoDB collections
-    const demoStats = {
-        totalStudents: 1250,
-        totalInstitutions: 45,
-        totalCompanies: 80,
-        totalOpportunities: 150,
-        totalApplications: 2480,
-        placements: 620,
-        placementRate: "78%",
-        skillGapClosure: "42%"
-    };
+    try {
+        const User = mongoose.model('User');
+        const Opportunity = mongoose.model('Opportunity');
+        const Application = mongoose.model('Application');
 
-    res.json({ success: true, data: demoStats });
-});
+        const students = await User.countDocuments({ role: 'student' });
+        const institutions = await User.countDocuments({ role: 'institution' });
+        const industries = await User.countDocuments({ role: 'industry' });
+        const jobs = await Opportunity.countDocuments();
+        const apps = await Application.countDocuments();
 
-// Manage Users Interface Data
-router.get('/users', async (req, res) => {
-    const demoStudents = [
-        { id: 1, name: 'Aarav Sharma', institution: 'NIT Durgapur', skillScore: 82, status: 'Active' },
-        { id: 2, name: 'Priya Nair', institution: 'VIT Vellore', skillScore: 88, status: 'Active' },
-        { id: 3, name: 'Rohan Sen', institution: 'Jadavpur University', skillScore: 76, status: 'Active' }
-    ];
-    res.json({ success: true, data: demoStudents });
+        res.json({ 
+            success: true, 
+            data: { students, institutions, industries, jobs, apps } 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
 });
 
 module.exports = router;
