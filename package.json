@@ -1,16 +1,17 @@
 {
   "name": "techaura",
   "version": "1.0.0",
-  "description": "Bridging Academia & Industry for Skill Mapping, Internships and Placement",
+  "description": "TechAura - Bridging Academia & Industry",
   "main": "index.js",
   "engines": {
     "node": "24.x"
   },
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "node index.js"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
