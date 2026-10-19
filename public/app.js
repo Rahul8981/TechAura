@@ -1,393 +1,230 @@
-// app.js
+let currentUser = JSON.parse(localStorage.getItem('user')) || null;
+let authToken = localStorage.getItem('token') || null;
 
-// --- Global State ---
-let currentUser = null;
+async function apiCall(endpoint, method = 'GET', body = null) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const config = { method, headers };
+    if (body) config.body = JSON.stringify(body);
+    try {
+        const response = await fetch(endpoint, config);
+        return await response.json();
+    } catch(e) {
+        return { success: false, message: "Network error. Check DB connection." };
+    }
+}
 
-// --- UI Helpers ---
-const showToast = (message) => {
+const showToast = (message, isError = false) => {
     const toast = document.getElementById('toast');
+    toast.querySelector('i').className = isError ? "fa-solid fa-circle-xmark text-red-500 text-xl" : "fa-solid fa-circle-check text-green-500 text-xl";
     document.getElementById('toast-msg').innerText = message;
     toast.classList.remove('translate-y-20', 'opacity-0');
-    setTimeout(() => {
-        toast.classList.add('translate-y-20', 'opacity-0');
-    }, 3000);
-};
-
-// --- Routing Engine ---
-const routes = {
-    home: renderHome,
-    login: renderLogin,
-    studentDashboard: renderStudentDashboard,
-    adminDashboard: renderAdminDashboard,
-    industryDashboard: renderIndustryDashboard,
-    institutionDashboard: renderInstitutionDashboard
+    setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
 };
 
 function navigate(route) {
-    const root = document.getElementById('app-root');
-    root.innerHTML = '<div class="flex justify-center items-center h-[60vh]"><i class="fa-solid fa-spinner fa-spin text-4xl text-indigo-500"></i></div>';
+    document.getElementById('app-root').innerHTML = '<div class="flex justify-center items-center h-[60vh]"><i class="fa-solid fa-spinner fa-spin text-5xl text-indigo-500"></i></div>';
     
-    // Update Navbar based on Auth
     const navAuth = document.getElementById('nav-auth-buttons');
-    if (currentUser) {
-        navAuth.innerHTML = `<button class="clay-btn bg-red-500" onclick="logout()">Logout</button>`;
+    if (currentUser && authToken) {
+        navAuth.innerHTML = `<button class="font-bold text-slate-600 mr-4 hidden md:inline"><i class="fa-regular fa-user mr-2"></i>${currentUser.name}</button><button class="clay-btn bg-red-500 shadow-red-500/30 hover:bg-red-600" onclick="logout()">Logout</button>`;
     } else {
-        navAuth.innerHTML = `
-            <button class="font-bold text-indigo-600 px-4 py-2" onclick="navigate('login')">Login</button>
-            <button class="clay-btn" onclick="navigate('login')">Get Started</button>
-        `;
+        navAuth.innerHTML = `<button class="font-bold text-indigo-600 px-4 py-2" onclick="navigate('login')">Login</button><button class="clay-btn" onclick="navigate('register')">Register</button>`;
     }
 
     setTimeout(() => {
         window.scrollTo(0, 0);
-        routes[route]();
-    }, 400); // Smooth transition fake delay
+        window[route]();
+    }, 150); 
 }
 
 function logout() {
-    currentUser = null;
+    currentUser = null; authToken = null;
+    localStorage.clear();
     showToast("Logged out successfully");
     navigate('home');
 }
 
-// --- Views ---
+// ======================= VIEWS ======================= //
 
-function renderHome() {
-    const html = `
+function home() {
+    document.getElementById('app-root').innerHTML = `
         <div class="max-w-7xl mx-auto px-6 py-12 slide-up">
-            <!-- Hero Section -->
             <div class="text-center mt-10">
-                <span class="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm mb-6 inline-block">SIH26044 Prototype</span>
+                <span class="px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm mb-6 inline-block">SIH26044 Fully Working</span>
                 <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 leading-tight">
                     Bridge the Gap Between <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Education and Industry</span>
                 </h1>
-                <p class="mt-6 text-xl text-slate-600 max-w-3xl mx-auto">
-                    Build the right skills, discover verified opportunities, connect with industry, and accelerate your career through Smart Automation.
-                </p>
+                <p class="mt-6 text-xl text-slate-600 max-w-3xl mx-auto">Real Database. Real Authentication. Real Dashboards.</p>
                 <div class="mt-10 flex justify-center gap-4">
-                    <button class="clay-btn text-lg" onclick="navigate('login')">Get Started <i class="fa-solid fa-arrow-right ml-2"></i></button>
+                    ${currentUser ? 
+                        `<button class="clay-btn text-lg" onclick="navigate('${currentUser.role}Dashboard')">Go to Dashboard <i class="fa-solid fa-arrow-right ml-2"></i></button>` : 
+                        `<button class="clay-btn text-lg" onclick="navigate('register')">Create Account <i class="fa-solid fa-arrow-right ml-2"></i></button>`
+                    }
                 </div>
             </div>
-
-            <!-- Animated Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20">
-                ${statCard('Students', '1,250+', 'fa-users')}
-                ${statCard('Industry Partners', '80+', 'fa-building')}
-                ${statCard('Opportunities', '150+', 'fa-briefcase')}
-                ${statCard('Placement Rate', '78%', 'fa-chart-line')}
-            </div>
-
-            <!-- Workflow Steps -->
-            <div class="mt-32" id="how-it-works">
-                <h2 class="text-4xl font-bold text-center mb-16">How TechAura Works</h2>
-                <div class="grid md:grid-cols-3 gap-8">
-                    ${stepCard('01', 'Registration', 'Join based on your role.', 'fa-user-plus')}
-                    ${stepCard('02', 'Skill Profiling', 'Identify technical & soft skills.', 'fa-list-check')}
-                    ${stepCard('03', 'AI Match Engine', 'Algorithmic career matching.', 'fa-brain')}
-                    ${stepCard('04', 'Apply & Track', 'Direct MoU-backed applications.', 'fa-paper-plane')}
-                    ${stepCard('05', 'Skill-Gap Analysis', 'Find missing courses.', 'fa-magnifying-glass-chart')}
-                    ${stepCard('06', 'Placement Analytics', 'NEP/NIRF ready reports.', 'fa-chart-pie')}
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24">
+                <div class="clay-card text-center"><i class="fa-solid fa-brain text-4xl text-cyan-500 mb-4"></i><h3 class="font-bold text-xl mb-2">AI Skill Matching</h3><p class="text-slate-500">Algorithms map student skills against industry demands.</p></div>
+                <div class="clay-card text-center"><i class="fa-solid fa-briefcase text-4xl text-indigo-500 mb-4"></i><h3 class="font-bold text-xl mb-2">Direct Internships</h3><p class="text-slate-500">Industry partners post jobs and shortlist candidates.</p></div>
+                <div class="clay-card text-center"><i class="fa-solid fa-chart-pie text-4xl text-green-500 mb-4"></i><h3 class="font-bold text-xl mb-2">Placement Analytics</h3><p class="text-slate-500">Real-time stats for Institutions and Admins.</p></div>
             </div>
         </div>
     `;
-    document.getElementById('app-root').innerHTML = html;
 }
 
-function renderLogin() {
+function register() {
     document.getElementById('app-root').innerHTML = `
-        <div class="min-h-[80vh] flex items-center justify-center fade-in px-4">
+        <div class="min-h-[70vh] flex items-center justify-center slide-up px-4">
+            <div class="clay-card w-full max-w-md p-8">
+                <h2 class="text-3xl font-bold text-center mb-6">Create Account</h2>
+                <input type="text" id="rName" class="clay-input" placeholder="Full Name or Company Name">
+                <input type="email" id="rEmail" class="clay-input" placeholder="Email Address">
+                <input type="password" id="rPass" class="clay-input" placeholder="Password">
+                <select id="rRole" class="clay-input cursor-pointer text-slate-600">
+                    <option value="student">I am a Student</option>
+                    <option value="industry">I am an Industry Partner</option>
+                    <option value="institution">I am an Institution</option>
+                    <option value="admin">I am a Platform Admin</option>
+                </select>
+                <button class="clay-btn w-full mt-4" onclick="doRegister()">Register Now</button>
+                <p class="text-center mt-6 text-sm font-semibold text-slate-500 cursor-pointer hover:text-indigo-600" onclick="navigate('login')">Already have an account? Login</p>
+            </div>
+        </div>
+    `;
+}
+
+async function doRegister() {
+    const name = document.getElementById('rName').value;
+    const email = document.getElementById('rEmail').value;
+    const password = document.getElementById('rPass').value;
+    const role = document.getElementById('rRole').value;
+    if(!name || !email || !password) return showToast("All fields required", true);
+    
+    const data = await apiCall('/api/auth/register', 'POST', {name, email, password, role});
+    if(data.success) {
+        localStorage.setItem('token', data.token); localStorage.setItem('user', JSON.stringify(data.user));
+        currentUser = data.user; authToken = data.token;
+        showToast("Account Created!"); navigate(`${role}Dashboard`);
+    } else showToast(data.message, true);
+}
+
+function login() {
+    document.getElementById('app-root').innerHTML = `
+        <div class="min-h-[70vh] flex items-center justify-center slide-up px-4">
             <div class="clay-card w-full max-w-md p-8">
                 <h2 class="text-3xl font-bold text-center mb-6">Welcome Back</h2>
-                <p class="text-center text-sm text-slate-500 mb-6">Use DEMO credentials provided below.</p>
-                
-                <input type="email" id="email" class="clay-input" placeholder="Email Address" value="student@techaura.demo">
-                <input type="password" id="password" class="clay-input" placeholder="Password" value="Student@123">
-                
-                <button class="clay-btn w-full mt-4" onclick="handleLogin()">Login to Dashboard</button>
-
-                <div class="mt-8 clay-card-inner text-sm text-slate-600">
-                    <p class="font-bold mb-2">Demo Accounts:</p>
-                    <ul class="space-y-1">
-                        <li><b>Student:</b> student@techaura.demo</li>
-                        <li><b>Institution:</b> institution@techaura.demo</li>
-                        <li><b>Industry:</b> company@techaura.demo</li>
-                        <li><b>Admin:</b> admin@techaura.demo</li>
-                        <li class="mt-2 text-xs italic">Password: Any containing "123"</li>
-                    </ul>
-                </div>
+                <input type="email" id="lEmail" class="clay-input" placeholder="Email Address">
+                <input type="password" id="lPass" class="clay-input" placeholder="Password">
+                <button class="clay-btn w-full mt-4" onclick="doLogin()">Secure Login</button>
+                <p class="text-center mt-6 text-sm font-semibold text-slate-500 cursor-pointer hover:text-indigo-600" onclick="navigate('register')">Don't have an account? Register</p>
             </div>
         </div>
     `;
 }
 
-async function handleLogin() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    try {
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            currentUser = data.user;
-            showToast(`Welcome, ${currentUser.name}`);
-            
-            if(currentUser.role === 'student') navigate('studentDashboard');
-            if(currentUser.role === 'admin') navigate('adminDashboard');
-            if(currentUser.role === 'industry') navigate('industryDashboard');
-            if(currentUser.role === 'institution') navigate('institutionDashboard');
-        } else {
-            alert("Invalid Demo Credentials");
-        }
-    } catch (err) {
-        showToast("Error connecting to server. Attempting local mock login.");
-        // Fallback for strict frontend-only environments if API fails
-        if(email.includes('student')) { currentUser = {role:'student', name:'Aarav (Local)'}; navigate('studentDashboard'); }
-    }
+async function doLogin() {
+    const email = document.getElementById('lEmail').value;
+    const password = document.getElementById('lPass').value;
+    if(!email || !password) return showToast("All fields required", true);
+    
+    const data = await apiCall('/api/auth/login', 'POST', {email, password});
+    if(data.success) {
+        localStorage.setItem('token', data.token); localStorage.setItem('user', JSON.stringify(data.user));
+        currentUser = data.user; authToken = data.token;
+        showToast(`Welcome, ${currentUser.name}`); navigate(`${currentUser.role}Dashboard`);
+    } else showToast(data.message, true);
 }
 
-// --- Student Dashboard ---
-function renderStudentDashboard() {
+// === DASHBOARDS === //
+
+async function studentDashboard() {
+    if(!authToken) return navigate('login');
     document.getElementById('app-root').innerHTML = `
         <div class="max-w-7xl mx-auto px-6 py-8 slide-up flex flex-col md:flex-row gap-8">
-            <!-- Sidebar -->
-            <div class="w-full md:w-64 space-y-4">
-                <div class="clay-card text-center">
-                    <div class="w-20 h-20 bg-indigo-100 rounded-full mx-auto mb-4 flex items-center justify-center text-indigo-600 text-3xl font-bold">
-                        A
-                    </div>
-                    <h3 class="font-bold text-xl">${currentUser.name}</h3>
-                    <p class="text-sm text-slate-500">B.Tech Computer Science</p>
-                </div>
-                <div class="clay-card p-4 space-y-2 font-semibold text-slate-700">
-                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl cursor-pointer"><i class="fa-solid fa-border-all w-6"></i> Dashboard</div>
-                    <div class="p-3 hover:bg-white rounded-xl cursor-pointer transition"><i class="fa-solid fa-list-check w-6"></i> Skill Profiling</div>
-                    <div class="p-3 hover:bg-white rounded-xl cursor-pointer transition"><i class="fa-solid fa-briefcase w-6"></i> Recommended Jobs</div>
-                    <div class="p-3 hover:bg-white rounded-xl cursor-pointer transition"><i class="fa-solid fa-certificate w-6"></i> Certificates</div>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="flex-1 space-y-8">
-                <!-- Overview Stats -->
-                <div class="grid grid-cols-3 gap-6">
-                    <div class="clay-card text-center">
-                        <div class="text-4xl font-black text-indigo-600 mb-2">85%</div>
-                        <p class="text-sm font-bold text-slate-500">Profile Completion</p>
-                    </div>
-                    <div class="clay-card text-center">
-                        <div class="text-4xl font-black text-cyan-500 mb-2">78%</div>
-                        <p class="text-sm font-bold text-slate-500">Skill Score</p>
-                    </div>
-                    <div class="clay-card text-center">
-                        <div class="text-4xl font-black text-green-500 mb-2">72%</div>
-                        <p class="text-sm font-bold text-slate-500">Placement Readiness</p>
-                    </div>
-                </div>
-
-                <!-- Skill Gap Analysis -->
-                <div class="clay-card">
-                    <h3 class="text-2xl font-bold mb-6">Skill Gap Analysis & Match</h3>
-                    <div class="flex flex-col md:flex-row items-center gap-8">
-                        <div class="match-ring" style="--percentage: 84;">
-                            <span>84%</span>
-                        </div>
-                        <div class="flex-1 w-full">
-                            <h4 class="font-bold text-lg mb-2">Match: Software Developer Intern @ TechNova</h4>
-                            <div class="clay-card-inner mb-3 flex gap-2 flex-wrap">
-                                <span class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full"><i class="fa-solid fa-check"></i> Java</span>
-                                <span class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full"><i class="fa-solid fa-check"></i> SQL</span>
-                                <span class="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full"><i class="fa-solid fa-check"></i> HTML/CSS</span>
-                            </div>
-                            <h4 class="font-bold text-sm text-red-500 mb-2">Missing Skills to Improve:</h4>
-                            <div class="clay-card-inner flex gap-2 flex-wrap">
-                                <span class="text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full"><i class="fa-solid fa-xmark"></i> Spring Boot</span>
-                                <span class="text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full"><i class="fa-solid fa-xmark"></i> REST APIs</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Job Opportunities -->
-                <h3 class="text-2xl font-bold mt-10">AI Recommended Opportunities</h3>
-                <div class="space-y-4" id="job-list">
-                    <div class="p-6 text-center text-slate-500">Loading jobs...</div>
-                </div>
-            </div>
+            <div class="w-full md:w-64"><div class="clay-card text-center"><div class="w-20 h-20 bg-indigo-100 rounded-full mx-auto mb-4 flex items-center justify-center text-indigo-600 text-3xl font-bold">${currentUser.name.charAt(0)}</div><h3 class="font-bold text-xl">${currentUser.name}</h3><p class="text-sm text-slate-500 mb-4">Student Portal</p><div class="clay-card-inner text-xs text-left"><p class="font-bold mb-1">My System Skills:</p>React, Node.js, HTML, CSS</div></div></div>
+            <div class="flex-1 space-y-6"><h2 class="text-3xl font-bold">Live AI Recommended Jobs</h2><div id="job-list" class="space-y-4"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div></div>
         </div>
     `;
-
-    // Fetch and render jobs
-    fetchJobs();
-}
-
-async function fetchJobs() {
-    try {
-        const res = await fetch('/api/opportunities');
-        const data = await res.json();
-        
-        const jobHTML = data.data.map(job => `
-            <div class="clay-card flex justify-between items-center hover:-translate-y-1 transition">
-                <div>
-                    <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded mb-2 inline-block">${job.type}</span>
-                    <h4 class="text-lg font-bold text-slate-800">${job.title}</h4>
-                    <p class="text-sm text-slate-500"><i class="fa-regular fa-building mr-1"></i> ${job.company} • ${job.location}</p>
-                    <p class="text-sm font-semibold text-green-600 mt-2">${job.stipend}</p>
-                </div>
-                <div class="text-right flex flex-col items-end gap-3">
-                    <div class="bg-indigo-50 text-indigo-600 font-bold px-3 py-1 rounded-full text-sm">Demo Match: ~80%</div>
-                    <button class="clay-btn py-2 px-6" onclick="applyJob()">Apply Now</button>
-                </div>
-            </div>
+    const data = await apiCall('/api/opportunities');
+    if (data.success && data.data.length > 0) {
+        document.getElementById('job-list').innerHTML = data.data.map(j => `
+            <div class="clay-card flex justify-between items-center"><div class="flex-1"><span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded inline-block mb-2">${j.type}</span><h4 class="text-xl font-bold">${j.title}</h4><p class="text-sm text-slate-500 mb-2"><i class="fa-solid fa-building mr-1"></i> ${j.company} • ${j.location}</p><p class="text-xs font-semibold bg-slate-100 px-2 py-1 rounded inline-block">Req: ${j.requiredSkills.join(', ')}</p></div><button class="clay-btn" onclick="applyJob('${j._id}')">1-Click Apply</button></div>
         `).join('');
-        document.getElementById('job-list').innerHTML = jobHTML;
-    } catch(e) {
-        document.getElementById('job-list').innerHTML = `<div class="clay-card text-center text-red-500">Please start local backend index.js or view demo data.</div>`;
-    }
+    } else document.getElementById('job-list').innerHTML = `<p class="text-slate-500 font-semibold">No opportunities currently posted. Ask an Industry account to post one!</p>`;
 }
 
-function applyJob() {
-    showToast("Application submitted successfully!");
+async function applyJob(id) {
+    const data = await apiCall('/api/apply', 'POST', { opportunityId: id });
+    if(data.success) showToast(`Applied! AI Match Score: ${data.matchScore}%`);
+    else showToast(data.message, true);
 }
 
-// --- Admin Dashboard (Reporting & Analytics) ---
-function renderAdminDashboard() {
+function industryDashboard() {
+    if(!authToken) return navigate('login');
     document.getElementById('app-root').innerHTML = `
         <div class="max-w-7xl mx-auto px-6 py-8 slide-up">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-bold text-slate-800">Platform Admin & Reports</h2>
-                <button class="clay-btn clay-btn-secondary"><i class="fa-solid fa-file-pdf mr-2"></i> Export NEP/NIRF Report</button>
-            </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-                ${statCard('Total Students', '1,250', 'fa-users', 'bg-blue-100 text-blue-600')}
-                ${statCard('Institutions', '45', 'fa-school', 'bg-purple-100 text-purple-600')}
-                ${statCard('Companies', '80', 'fa-building', 'bg-orange-100 text-orange-600')}
-                ${statCard('Placements', '620', 'fa-award', 'bg-green-100 text-green-600')}
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-8">
+            <h2 class="text-3xl font-bold mb-6">Industry Portal: ${currentUser.name}</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="clay-card">
-                    <h3 class="text-xl font-bold mb-4">Placement Conversion Trend</h3>
-                    <canvas id="placementChart" height="200"></canvas>
+                    <h3 class="text-xl font-bold mb-4">Post Opportunity</h3>
+                    <input type="text" id="jTitle" class="clay-input" placeholder="Job Title (e.g. Frontend Dev)">
+                    <select id="jType" class="clay-input"><option value="Job">Full-time</option><option value="Internship">Internship</option></select>
+                    <input type="text" id="jLoc" class="clay-input" placeholder="Location (e.g. Remote)">
+                    <input type="text" id="jSkills" class="clay-input" placeholder="Required Skills (comma separated)">
+                    <button class="clay-btn w-full" onclick="postJob()">Publish</button>
                 </div>
-                <div class="clay-card">
-                    <h3 class="text-xl font-bold mb-4">Skill Gap Closure Rate</h3>
-                    <canvas id="skillChart" height="200"></canvas>
-                </div>
+                <div class="clay-card"><h3 class="text-xl font-bold mb-4">My Active Posts</h3><div id="my-jobs" class="space-y-3">Loading...</div></div>
             </div>
         </div>
     `;
-
-    setTimeout(renderCharts, 100);
+    loadIndustryJobs();
 }
 
-// --- Helper Functions for UI ---
-function statCard(title, value, icon, colorClass = "bg-indigo-100 text-indigo-600") {
-    return `
-        <div class="clay-card text-center">
-            <div class="w-14 h-14 ${colorClass} rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4">
-                <i class="fa-solid ${icon}"></i>
-            </div>
-            <div class="text-3xl font-black text-slate-800 mb-1">${value}</div>
-            <div class="text-sm font-semibold text-slate-500">${title}</div>
-        </div>
-    `;
+async function postJob() {
+    const title = document.getElementById('jTitle').value, type = document.getElementById('jType').value, location = document.getElementById('jLoc').value, skills = document.getElementById('jSkills').value.split(',').map(s=>s.trim());
+    if(!title || !skills[0]) return showToast("Title and skills required", true);
+    const res = await apiCall('/api/opportunities', 'POST', {title, company: currentUser.name, type, location, requiredSkills: skills});
+    if(res.success) { showToast("Posted successfully!"); loadIndustryJobs(); } else showToast(res.message, true);
 }
 
-function stepCard(number, title, desc, icon) {
-    return `
-        <div class="clay-card relative hover:-translate-y-2 transition-transform duration-300">
-            <div class="absolute -top-6 -left-6 text-6xl font-black text-slate-200 opacity-50 z-0">${number}</div>
-            <div class="relative z-10">
-                <div class="w-12 h-12 bg-cyan-100 text-cyan-600 rounded-xl flex items-center justify-center text-xl mb-4 shadow-sm">
-                    <i class="fa-solid ${icon}"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2 text-slate-800">${title}</h3>
-                <p class="text-slate-600">${desc}</p>
-            </div>
-        </div>
-    `;
+async function loadIndustryJobs() {
+    const res = await apiCall('/api/opportunities');
+    if(res.success && res.data.length > 0) {
+        document.getElementById('my-jobs').innerHTML = res.data.filter(j => j.company === currentUser.name).map(j => `<div class="clay-card-inner"><h4 class="font-bold">${j.title}</h4><p class="text-xs text-slate-500">${j.type} • ${j.location}</p></div>`).join('');
+    } else document.getElementById('my-jobs').innerHTML = "No posts yet.";
 }
 
-// --- Chart Rendering ---
-function renderCharts() {
-    const ctx1 = document.getElementById('placementChart');
-    if(ctx1) {
-        new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: ['2023', '2024', '2025', '2026'],
-                datasets: [{
-                    label: 'Placed Students',
-                    data: [300, 450, 520, 620],
-                    backgroundColor: '#4f46e5',
-                    borderRadius: 8
-                }]
-            },
-            options: { responsive: true, plugins: { legend: { display: false } } }
-        });
-    }
+function adminDashboard() { loadStats('Platform Admin'); }
+function institutionDashboard() { loadStats('Institution'); }
 
-    const ctx2 = document.getElementById('skillChart');
-    if(ctx2) {
-        new Chart(ctx2, {
-            type: 'line',
-            data: {
-                labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-                datasets: [{
-                    label: 'Skill Match %',
-                    data: [60, 65, 75, 84],
-                    borderColor: '#06b6d4',
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: 'rgba(6, 182, 212, 0.2)'
-                }]
-            },
-            options: { responsive: true }
-        });
-    }
-}
-
-// --- Placeholder Roles ---
-function renderIndustryDashboard() {
+async function loadStats(roleName) {
+    if(!authToken) return navigate('login');
     document.getElementById('app-root').innerHTML = `
         <div class="max-w-7xl mx-auto px-6 py-8 slide-up">
-            <h2 class="text-3xl font-bold mb-8">Industry Partner: Talent Search</h2>
-            <div class="clay-card mb-8">
-                <div class="flex gap-4">
-                    <input type="text" class="clay-input m-0 flex-1" placeholder="Search by skill (e.g. React, Java)...">
-                    <button class="clay-btn">Search AI Matches</button>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                ${studentCard('Aarav Sharma', 'Java, SQL, React', '82%')}
-                ${studentCard('Priya Nair', 'Python, Data Analytics', '88%')}
-                ${studentCard('Rohan Sen', 'Node.js, MongoDB', '76%')}
-            </div>
+            <h2 class="text-3xl font-bold mb-8">${roleName} Analytics Dashboard</h2>
+            <div id="stats-grid" class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10"><i class="fa-solid fa-spinner fa-spin text-3xl text-indigo-500"></i></div>
+            <div class="clay-card"><h3 class="text-xl font-bold mb-4">Platform Overview</h3><canvas id="statChart" height="80"></canvas></div>
         </div>
     `;
+    const res = await apiCall('/api/admin/stats');
+    if(res.success) {
+        const d = res.data;
+        document.getElementById('stats-grid').innerHTML = `
+            ${renderStatBox('Students', d.students, 'fa-users', 'text-blue-600', 'bg-blue-100')}
+            ${renderStatBox('Companies', d.industries, 'fa-building', 'text-orange-600', 'bg-orange-100')}
+            ${renderStatBox('Live Jobs', d.jobs, 'fa-briefcase', 'text-purple-600', 'bg-purple-100')}
+            ${renderStatBox('Applications', d.apps, 'fa-paper-plane', 'text-green-600', 'bg-green-100')}
+        `;
+        new Chart(document.getElementById('statChart'), { type: 'bar', data: { labels: ['Students', 'Companies', 'Jobs', 'Apps'], datasets: [{ label: 'Platform Data', data: [d.students, d.industries, d.jobs, d.apps], backgroundColor: ['#3b82f6', '#f97316', '#a855f7', '#22c55e'], borderRadius: 6 }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+    } else showToast("Failed to load DB stats", true);
 }
 
-function studentCard(name, skills, match) {
-    return `
-        <div class="clay-card text-center">
-            <div class="w-16 h-16 bg-slate-200 rounded-full mx-auto mb-4 border-2 border-indigo-500"></div>
-            <h3 class="font-bold text-lg">${name}</h3>
-            <p class="text-sm text-slate-500 mb-4">${skills}</p>
-            <div class="bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full text-sm inline-block mb-4">Placement Ready: ${match}</div>
-            <button class="clay-btn w-full py-2 text-sm">Shortlist</button>
-        </div>
-    `;
+function renderStatBox(title, val, icon, textCol, bgCol) {
+    return `<div class="clay-card text-center"><div class="w-14 h-14 ${bgCol} ${textCol} rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"><i class="fa-solid ${icon}"></i></div><div class="text-4xl font-black text-slate-800 mb-1">${val}</div><div class="text-sm font-semibold text-slate-500">${title}</div></div>`;
 }
 
-function renderInstitutionDashboard() {
-    renderAdminDashboard(); // Mirrors admin UI for prototype purposes
+// Initial Boot
+if (authToken && currentUser) navigate(`${currentUser.role}Dashboard`); else navigate('home');
 }
 
 // Init Application
